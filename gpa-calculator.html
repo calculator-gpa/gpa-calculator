@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>University GPA Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── CSS Variables ─────────────────────────────────────────── */
+    :root {
+      --bg:          #0d1117;
+      --surface:     #161b27;
+      --card:        #1e2535;
+      --card-hover:  #252d42;
+      --border:      #2e3a52;
+      --accent:      #4f8ef7;
+      --accent2:     #7c5ce0;
+      --gold:        #f5c842;
+      --success:     #2ecc71;
+      --danger:      #e74c3c;
+      --text:        #e8edf5;
+      --muted:       #7b8caa;
+      --input-bg:    #141926;
+      --radius:      14px;
+      --shadow:      0 8px 32px rgba(0,0,0,0.45);
+      --transition:  0.22s ease;
+    }
+
+    /* ─── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 0;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(79,142,247,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(124,92,224,0.10) 0%, transparent 60%);
+    }
+
+    /* ─── Header ────────────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, rgba(79,142,247,0.15), rgba(124,92,224,0.15));
+      border: 1px solid rgba(79,142,247,0.3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 14px;
+    }
+
+    .header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #e8edf5 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 300;
+    }
+
+    /* ─── Main Container ────────────────────────────────────────── */
+    .container {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ─── Card ──────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-header .icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .card-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card-header p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ─── Table / Course List ───────────────────────────────────── */
+    .course-list {
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Column labels */
+    .col-labels {
+      display: grid;
+      grid-template-columns: 1fr 110px 130px 48px;
+      gap: 10px;
+      padding: 0 4px;
+    }
+
+    .col-labels span {
+      font-size: 0.73rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* Course row */
+    .course-row {
+      display: grid;
+      grid-template-columns: 1fr 110px 130px 48px;
+      gap: 10px;
+      align-items: center;
+      animation: slideIn 0.25s ease forwards;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Inputs & Select */
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      -webkit-appearance: none;
+    }
+
+    input[type="text"]::placeholder,
+    input[type="number"]::placeholder {
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.14);
+    }
+
+    input.error,
+    select.error {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(231,76,60,0.12);
+    }
+
+    /* Custom select arrow */
+    .select-wrap { position: relative; }
+
+    .select-wrap::after {
+      content: "▾";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      font-size: 13px;
+    }
+
+    select option {
+      background: var(--card);
+    }
+
+    /* Remove button */
+    .btn-remove {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(231,76,60,0.3);
+      background: rgba(231,76,60,0.08);
+      color: var(--danger);
+      font-size: 17px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition);
+      flex-shrink: 0;
+    }
+
+    .btn-remove:hover {
+      background: rgba(231,76,60,0.2);
+      border-color: var(--danger);
+      transform: scale(1.08);
+    }
+
+    .btn-remove:active { transform: scale(0.96); }
+
+    /* ─── Action Bar ────────────────────────────────────────────── */
+    .action-bar {
+      padding: 6px 24px 22px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 22px;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 24px rgba(79,142,247,0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #2ecc71, #1a9e57);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(46,204,113,0.25);
+    }
+
+    .btn-success:hover {
+      box-shadow: 0 6px 24px rgba(46,204,113,0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(79,142,247,0.06);
+    }
+
+    /* ─── Results Card ──────────────────────────────────────────── */
+    .results-grid {
+      padding: 24px 28px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .stat-box {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 16px;
+      text-align: center;
+      transition: border-color var(--transition), transform var(--transition);
+    }
+
+    .stat-box:hover {
+      border-color: rgba(79,142,247,0.4);
+      transform: translateY(-2px);
+    }
+
+    .stat-label {
+      font-size: 0.73rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-value.gpa-value {
+      font-size: 2.4rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ─── Classification Banner ─────────────────────────────────── */
+    .classification-banner {
+      margin: 0 24px 24px;
+      padding: 16px 22px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1.5px solid transparent;
+      background: var(--input-bg);
+      transition: all 0.4s ease;
+      opacity: 0.4;
+    }
+
+    .classification-banner.active {
+      opacity: 1;
+    }
+
+    .class-icon {
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    .class-label {
+      font-size: 0.75rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .class-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .class-range {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Classification color themes */
+    .class-first    { border-color: rgba(245,200,66,0.5);  background: rgba(245,200,66,0.07); }
+    .class-first    .class-label, .class-first    .class-name { color: var(--gold); }
+
+    .class-upper    { border-color: rgba(79,142,247,0.5);  background: rgba(79,142,247,0.07); }
+    .class-upper    .class-label, .class-upper    .class-name { color: var(--accent); }
+
+    .class-lower    { border-color: rgba(124,92,224,0.5);  background: rgba(124,92,224,0.07); }
+    .class-lower    .class-label, .class-lower    .class-name { color: var(--accent2); }
+
+    .class-pass     { border-color: rgba(46,204,113,0.5);  background: rgba(46,204,113,0.07); }
+    .class-pass     .class-label, .class-pass     .class-name { color: var(--success); }
+
+    .class-fail     { border-color: rgba(231,76,60,0.5);   background: rgba(231,76,60,0.07); }
+    .class-fail     .class-label, .class-fail     .class-name { color: var(--danger); }
+
+    /* ─── Grade Scale Card ──────────────────────────────────────── */
+    .scale-grid {
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+    }
+
+    .scale-chip {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+
+    .scale-chip:hover {
+      transform: translateY(-2px);
+      border-color: rgba(79,142,247,0.4);
+    }
+
+    .grade-letter {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .grade-points {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .grade-A  { color: var(--gold); }
+    .grade-Bp { color: #4f8ef7; }
+    .grade-B  { color: #7c5ce0; }
+    .grade-C  { color: #2ecc71; }
+    .grade-D  { color: #f39c12; }
+    .grade-F  { color: var(--danger); }
+
+    /* ─── Validation Toast ──────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(231,76,60,0.95);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.87rem;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 1000;
+      transform: translateX(110%);
+      transition: transform 0.3s ease;
+    }
+
+    .toast.show { transform: translateX(0); }
+
+    /* ─── Empty State ───────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--muted);
+      display: none;
+    }
+
+    .empty-state.visible { display: block; }
+
+    .empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ─── Footer ────────────────────────────────────────────────── */
+    footer {
+      margin-top: 48px;
+      width: 100%;
+      max-width: 860px;
+      border-top: 1px solid var(--border);
+      padding: 28px 0 36px;
+      text-align: center;
+    }
+
+    .footer-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .footer-dev-label {
+      font-size: 0.73rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .footer-contacts {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .footer-contacts a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color var(--transition);
+    }
+
+    .footer-contacts a:hover { color: var(--accent); }
+
+    /* ─── Responsive ────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .course-row,
+      .col-labels {
+        grid-template-columns: 1fr 80px 110px 40px;
+        gap: 6px;
+      }
+
+      .results-grid { grid-template-columns: 1fr 1fr; }
+
+      .stat-box:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .card-header { padding: 16px 18px; }
+      .course-list  { padding: 16px 14px; }
+      .action-bar   { padding: 6px 14px 18px; }
+      .scale-grid   { padding: 14px; }
+      .results-grid { padding: 16px; }
+      .classification-banner { margin: 0 16px 18px; }
+
+      .btn { padding: 10px 16px; font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-badge">5.0 GPA System</div>
+    <h1>University GPA Calculator</h1>
+    <p>Calculate your Grade Point Average instantly &amp; accurately</p>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Course Entry Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon">📚</div>
+        <div>
+          <h2>Course Entries</h2>
+          <p>Add your courses, credits and grades below</p>
+        </div>
+      </div>
+
+      <div class="course-list" id="courseList">
+        <!-- Column labels -->
+        <div class="col-labels">
+          <span>Course Name</span>
+          <span>Credits</span>
+          <span>Grade</span>
+          <span></span>
+        </div>
+        <!-- Empty state -->
+        <div class="empty-state visible" id="emptyState">
+          <div class="empty-icon">🎓</div>
+          <p>No courses yet. Click <strong>Add Course</strong> to get started.</p>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="addCourse()">
+          <span>＋</span> Add Course
+        </button>
+        <button class="btn btn-success" onclick="calculateGPA()">
+          ⚡ Calculate GPA
+        </button>
+        <button class="btn btn-ghost" onclick="resetAll()">
+          ↺ Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon">📊</div>
+        <div>
+          <h2>Your Results</h2>
+          <p>Summary of your academic performance</p>
+        </div>
+      </div>
+
+      <div class="results-grid">
+        <div class="stat-box">
+          <div class="stat-label">Total Credits</div>
+          <div class="stat-value" id="totalCredits">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Grade Points</div>
+          <div class="stat-value" id="totalPoints">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Your GPA</div>
+          <div class="stat-value gpa-value" id="gpaDisplay">—</div>
+        </div>
+      </div>
+
+      <div class="classification-banner" id="classBanner">
+        <div class="class-icon" id="classIcon">🎓</div>
+        <div>
+          <div class="class-label" id="classLabel">Classification</div>
+          <div class="class-name" id="className">—</div>
+          <div class="class-range" id="classRange">Add courses and calculate to see your result</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grade Scale Reference Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon">📋</div>
+        <div>
+          <h2>Grade Scale Reference</h2>
+          <p>5.0 grading system used in this calculator</p>
+        </div>
+      </div>
+      <div class="scale-grid">
+        <div class="scale-chip">
+          <div class="grade-letter grade-A">A</div>
+          <div class="grade-points">5.0 points · Excellent</div>
+        </div>
+        <div class="scale-chip">
+          <div class="grade-letter grade-Bp">B+</div>
+          <div class="grade-points">4.0 points · Very Good</div>
+        </div>
+        <div class="scale-chip">
+          <div class="grade-letter grade-B">B</div>
+          <div class="grade-points">3.0 points · Good</div>
+        </div>
+        <div class="scale-chip">
+          <div class="grade-letter grade-C">C</div>
+          <div class="grade-points">2.0 points · Average</div>
+        </div>
+        <div class="scale-chip">
+          <div class="grade-letter grade-D">D</div>
+          <div class="grade-points">1.0 point · Below Avg</div>
+        </div>
+        <div class="scale-chip">
+          <div class="grade-letter grade-F">F</div>
+          <div class="grade-points">0.0 points · Fail</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-dev-label">Developed by</div>
+    <div class="footer-name">Hafidh Omar Othman</div>
+    <div class="footer-contacts" style="margin-top:12px;">
+      <a href="tel:+255658502920">
+        <span>📞</span> +255 658 502 920
+      </a>
+      <a href="mailto:hafidhomar167@gmail.com">
+        <span>✉️</span> hafidhomar167@gmail.com
+      </a>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ─── JavaScript ──────────────────────────────────────────────── -->
+  <script>
+    /* ── Grade map ────────────────────────────────────────────────── */
+    const GRADES = {
+      'A':  5,
+      'B+': 4,
+      'B':  3,
+      'C':  2,
+      'D':  1,
+      'F':  0
+    };
+
+    /* ── Classification table ─────────────────────────────────────── */
+    const CLASSIFICATIONS = [
+      {
+        min: 4.4,  max: 5.0,
+        label: 'First Class',
+        icon: '🏆',
+        css: 'class-first',
+        range: 'GPA 4.40 – 5.00'
+      },
+      {
+        min: 3.5,  max: 4.39,
+        label: 'Upper Second Class',
+        icon: '🥇',
+        css: 'class-upper',
+        range: 'GPA 3.50 – 4.39'
+      },
+      {
+        min: 2.7,  max: 3.49,
+        label: 'Lower Second Class',
+        icon: '🥈',
+        css: 'class-lower',
+        range: 'GPA 2.70 – 3.49'
+      },
+      {
+        min: 2.0,  max: 2.69,
+        label: 'Pass',
+        icon: '✅',
+        css: 'class-pass',
+        range: 'GPA 2.00 – 2.69'
+      },
+      {
+        min: -Infinity,  max: 1.99,
+        label: 'Fail',
+        icon: '❌',
+        css: 'class-fail',
+        range: 'GPA Below 2.00'
+      }
+    ];
+
+    let courseCount = 0;
+
+    /* ── Add a course row ─────────────────────────────────────────── */
+    function addCourse() {
+      courseCount++;
+      const id = `course-${courseCount}`;
+
+      // Hide empty state
+      document.getElementById('emptyState').classList.remove('visible');
+
+      const list = document.getElementById('courseList');
+
+      const row = document.createElement('div');
+      row.className = 'course-row';
+      row.id = id;
+
+      // Course name input
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = `Course ${courseCount}`;
+      nameInput.className = 'course-name';
+
+      // Credit input
+      const creditInput = document.createElement('input');
+      creditInput.type = 'number';
+      creditInput.placeholder = 'Credits';
+      creditInput.min = '0.5';
+      creditInput.step = '0.5';
+      creditInput.className = 'course-credit';
+
+      // Grade select wrapped in div for custom arrow
+      const selectWrap = document.createElement('div');
+      selectWrap.className = 'select-wrap';
+
+      const gradeSelect = document.createElement('select');
+      gradeSelect.className = 'course-grade';
+
+      Object.keys(GRADES).forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = `${g}  (${GRADES[g].toFixed(1)} pts)`;
+        gradeSelect.appendChild(opt);
+      });
+
+      selectWrap.appendChild(gradeSelect);
+
+      // Remove button
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn-remove';
+      removeBtn.innerHTML = '✕';
+      removeBtn.title = 'Remove this course';
+      removeBtn.onclick = () => removeCourse(id);
+
+      row.appendChild(nameInput);
+      row.appendChild(creditInput);
+      row.appendChild(selectWrap);
+      row.appendChild(removeBtn);
+      list.appendChild(row);
+
+      // Focus the name field
+      nameInput.focus();
+    }
+
+    /* ── Remove a course row ──────────────────────────────────────── */
+    function removeCourse(id) {
+      const row = document.getElementById(id);
+      if (row) {
+        row.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(20px)';
+        setTimeout(() => {
+          row.remove();
+          // Show empty state if no rows left
+          const rows = document.querySelectorAll('.course-row');
+          if (rows.length === 0) {
+            document.getElementById('emptyState').classList.add('visible');
+          }
+        }, 200);
+      }
+    }
+
+    /* ── Calculate GPA ────────────────────────────────────────────── */
+    function calculateGPA() {
+      const rows = document.querySelectorAll('.course-row');
+
+      if (rows.length === 0) {
+        showToast('⚠️  Please add at least one course first.');
+        return;
+      }
+
+      let valid       = true;
+      let totalCredit = 0;
+      let totalPoints = 0;
+
+      rows.forEach(row => {
+        const creditInput = row.querySelector('.course-credit');
+        const gradeSelect = row.querySelector('.course-grade');
+
+        // Clear previous error state
+        creditInput.classList.remove('error');
+
+        const credit = parseFloat(creditInput.value);
+        const grade  = gradeSelect.value;
+
+        if (!creditInput.value || isNaN(credit) || credit <= 0) {
+          creditInput.classList.add('error');
+          valid = false;
+          return;
+        }
+
+        totalCredit += credit;
+        totalPoints += credit * GRADES[grade];
+      });
+
+      if (!valid) {
+        showToast('⚠️  Please enter valid credit values for all courses.');
+        return;
+      }
+
+      const gpa = totalCredit > 0 ? (totalPoints / totalCredit) : 0;
+
+      // Update stat boxes with animated count
+      animateValue('totalCredits', totalCredit, false);
+      animateValue('totalPoints',  totalPoints, false);
+      animateValue('gpaDisplay',   gpa,         true);
+
+      // Determine classification
+      setClassification(gpa);
+    }
+
+    /* ── Animate stat values ──────────────────────────────────────── */
+    function animateValue(elemId, targetVal, isFloat) {
+      const el   = document.getElementById(elemId);
+      const start = parseFloat(el.dataset.val || 0) || 0;
+      const duration = 500;
+      const startTime = performance.now();
+
+      function update(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased    = 1 - Math.pow(1 - progress, 3);
+        const current  = start + (targetVal - start) * eased;
+        el.textContent = isFloat
+          ? current.toFixed(2)
+          : (Number.isInteger(targetVal) ? Math.round(current) : current.toFixed(1));
+        if (progress < 1) requestAnimationFrame(update);
+        else {
+          el.dataset.val = targetVal;
+          el.textContent = isFloat
+            ? targetVal.toFixed(2)
+            : (Number.isInteger(targetVal) ? targetVal : targetVal.toFixed(1));
+        }
+      }
+      requestAnimationFrame(update);
+    }
+
+    /* ── Set classification banner ────────────────────────────────── */
+    function setClassification(gpa) {
+      const banner    = document.getElementById('classBanner');
+      const iconEl    = document.getElementById('classIcon');
+      const labelEl   = document.getElementById('classLabel');
+      const nameEl    = document.getElementById('className');
+      const rangeEl   = document.getElementById('classRange');
+
+      // Remove old colour classes
+      CLASSIFICATIONS.forEach(c => banner.classList.remove(c.css));
+
+      const cls = CLASSIFICATIONS.find(c => gpa >= c.min && gpa <= c.max)
+                  || CLASSIFICATIONS[CLASSIFICATIONS.length - 1];
+
+      iconEl.textContent  = cls.icon;
+      labelEl.textContent = 'Classification';
+      nameEl.textContent  = cls.label;
+      rangeEl.textContent = cls.range;
+
+      banner.classList.add(cls.css, 'active');
+    }
+
+    /* ── Reset everything ─────────────────────────────────────────── */
+    function resetAll() {
+      // Remove all course rows
+      document.querySelectorAll('.course-row').forEach(r => r.remove());
+      courseCount = 0;
+
+      // Show empty state
+      document.getElementById('emptyState').classList.add('visible');
+
+      // Reset stats
+      ['totalCredits', 'totalPoints', 'gpaDisplay'].forEach(id => {
+        const el = document.getElementById(id);
+        el.textContent = '—';
+        el.dataset.val = 0;
+      });
+
+      // Reset classification banner
+      const banner = document.getElementById('classBanner');
+      CLASSIFICATIONS.forEach(c => banner.classList.remove(c.css));
+      banner.classList.remove('active');
+
+      document.getElementById('classIcon').textContent  = '🎓';
+      document.getElementById('classLabel').textContent = 'Classification';
+      document.getElementById('className').textContent  = '—';
+      document.getElementById('classRange').textContent = 'Add courses and calculate to see your result';
+    }
+
+    /* ── Toast notification ───────────────────────────────────────── */
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    /* ── Keyboard shortcut: Enter to calculate ────────────────────── */
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) calculateGPA();
+    });
+
+    /* ── Bootstrap with one empty row ────────────────────────────── */
+    addCourse();
+  </script>
+
+</body>
+</html>
